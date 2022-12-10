@@ -22,8 +22,9 @@ class LogData(TypedDict):
     Time_SpawningPlayers: str
 
 class LogDataCollector:
-    VERSION = "1.1.0"
-    LOGFILE_PATTERN = re.compile(r"output_log_\d{2}-\d{2}-\d{2}\.txt")
+    VERSION = "1.1.1"
+    LOGFILE_PATTERN1 = re.compile(r"output_log_\d{2}-\d{2}-\d{2}\.txt")
+    LOGFILE_PATTERN2 = re.compile(r"output_log_\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}\.txt")
     VR_PATTERN = re.compile(r"^.*?OpenVR initialized!")
     EAC_PATTERN = re.compile(r"^.*?\[EOSManager\].*?$")
     GO_HOME_PATTERN = re.compile(r"^.*?\[Behaviour\] Going to Home Location:.*?$")
@@ -44,7 +45,7 @@ class LogDataCollector:
         pass
 
     def collect(self, path: str):
-        logfile_list = [path + "/" + f for f in os.listdir(path) if re.fullmatch(self.LOGFILE_PATTERN, f)]
+        logfile_list = [path + "/" + f for f in os.listdir(path) if (re.fullmatch(self.LOGFILE_PATTERN1, f) or re.fullmatch(self.LOGFILE_PATTERN2, f))]
         logfile_list.sort(key=os.path.getmtime)
         for logfile in logfile_list:
             self.read_log(logfile)
@@ -102,9 +103,10 @@ class LogDataCollector:
 
     def output_to_csv(self, path: str):
         with open(path, encoding="utf_8_sig", mode="w", errors="backslashreplace", newline="") as f:
-            writer = csv.DictWriter(f, list(self.datalist[0].keys()))
-            writer.writeheader()
-            writer.writerows(self.datalist)
+            if self.datalist:
+                writer = csv.DictWriter(f, list(self.datalist[0].keys()))
+                writer.writeheader()
+                writer.writerows(self.datalist)
 
 if __name__ == "__main__":
     print(f"VRC Log Data Collector v{LogDataCollector.VERSION}")
